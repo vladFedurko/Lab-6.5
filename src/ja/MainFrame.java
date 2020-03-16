@@ -7,10 +7,8 @@ import java.awt.event.ActionListener;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
+import java.util.ArrayList;
 import javax.swing.BorderFactory;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
@@ -32,14 +30,18 @@ public class MainFrame extends JFrame {
     private static final int TO_FIELD_DEFAULT_COLUMNS = 20;
     private static final int INCOMING_AREA_DEFAULT_ROWS = 10;
     private static final int OUTGOING_AREA_DEFAULT_ROWS = 5;
-    private static final int SMALL_GAP = 5;
-    private static final int MEDIUM_GAP = 10;
-    private static final int LARGE_GAP = 15;
+    public static final int SMALL_GAP = 5;
+    public static final int MEDIUM_GAP = 10;
+    public static final int LARGE_GAP = 15;
     private static final int SERVER_PORT = 4567;
+    private static final String SERVER_ADDRESS = "192.168.0.102";
     private final JTextField textFieldFrom;
     private final JTextField textFieldTo;
     private final JTextArea textAreaIncoming;
     private final JTextArea textAreaOutgoing;
+
+    private ArrayList<User> usersList;
+    private String name;
 
     public MainFrame() {
         super(FRAME_TITLE);
@@ -58,10 +60,11 @@ public class MainFrame extends JFrame {
         final JButton sendButton = new JButton("Отправить");
         sendButton.addActionListener(new ActionListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public synchronized void actionPerformed(ActionEvent e) {
                 sendMessage();
             }
         });
+
         final GroupLayout layout2 = new GroupLayout(messagePanel);
         messagePanel.setLayout(layout2);
         layout2.setHorizontalGroup(layout2.createSequentialGroup()
@@ -135,13 +138,6 @@ public class MainFrame extends JFrame {
         }).start();
     }
 
-    private void setWindowState() {
-        final Toolkit kit = Toolkit.getDefaultToolkit();
-        setLocation((kit.getScreenSize().width - getWidth()) / 2,
-                (kit.getScreenSize().height - getHeight()) / 2);
-        setMinimumSize(new Dimension(FRAME_MINIMUM_WIDTH, FRAME_MINIMUM_HEIGHT));
-    }
-
     private void sendMessage() {
         try {
             final String senderName = textFieldFrom.getText();
@@ -185,7 +181,46 @@ public class MainFrame extends JFrame {
         }
     }
 
+    private void startServerThread() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Socket socket;
+                while(!Thread.interrupted()){
+                    try {
+                        socket = new Socket(SERVER_ADDRESS,5555);
+                        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                        out.writeUTF("GET");
+                        DataInputStream input = new DataInputStream(socket.getInputStream());
+                        String response = input.readUTF();
+                        if(response.equals("OK")) {
+                            usersList = new ArrayList<>(10);
+                            while(input.available() > 0) {
+                                usersList.add(new User(input.readUTF()));
+                            }
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+
+    private void sendMulticastNotification() {
+
+    }
+
+    private void setWindowState() {
+        final Toolkit kit = Toolkit.getDefaultToolkit();
+        setLocation((kit.getScreenSize().width - getWidth()) / 2,
+                (kit.getScreenSize().height - getHeight()) / 2);
+        setMinimumSize(new Dimension(FRAME_MINIMUM_WIDTH, FRAME_MINIMUM_HEIGHT));
+    }
+
     public static void main(String[] args) {
+        StartWindow fr = new StartWindow();
+        fr.setVisible(true);
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
