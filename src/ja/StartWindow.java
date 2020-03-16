@@ -4,6 +4,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
 
 
 public class StartWindow extends JFrame {
@@ -17,11 +21,12 @@ public class StartWindow extends JFrame {
     private JButton changeStateButton = new JButton();
     private JLabel nameLabel = new JLabel("Логин");
     private JLabel passwordLabel = new JLabel("Пароль");
+    private JLabel errorLabel = new JLabel("");
 
     private GroupLayout layout;
 
     private final int width = 300;
-    private final int height = 270;
+    private final int height = 300;
 
     public StartWindow() {
         super("Вход");
@@ -36,7 +41,16 @@ public class StartWindow extends JFrame {
         sendButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                send();
+                if(isLoginState || passwordField.getText().equals(passwordField2.getText())) {
+                    try {
+                        send();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else
+                {
+                    errorLabel.setText("Пароли не совпадают");
+                }
             }
         });
         changeStateButton.addActionListener(new ActionListener() {
@@ -64,6 +78,7 @@ public class StartWindow extends JFrame {
                                 .addComponent(header, GroupLayout.Alignment.CENTER)
                                 .addComponent(changeStateButton, GroupLayout.Alignment.LEADING)
                                 .addComponent(nameLabel)
+                                .addComponent(errorLabel)
                                 .addComponent(nameField)
                                 .addComponent(passwordLabel)
                                 .addComponent(passwordField)
@@ -74,6 +89,8 @@ public class StartWindow extends JFrame {
                 layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(header)
+                .addGap(MainFrame.SMALL_GAP)
+                .addComponent(errorLabel)
                 .addGap(MainFrame.LARGE_GAP)
                 .addComponent(nameLabel)
                 .addGap(MainFrame.SMALL_GAP)
@@ -101,6 +118,7 @@ public class StartWindow extends JFrame {
                         .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                                 .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                                         .addComponent(header, GroupLayout.Alignment.CENTER)
+                                        .addComponent(errorLabel)
                                         .addComponent(changeStateButton, GroupLayout.Alignment.LEADING)
                                         .addComponent(nameLabel)
                                         .addComponent(passwordLabel2)
@@ -115,6 +133,8 @@ public class StartWindow extends JFrame {
                 layout.createSequentialGroup()
                         .addContainerGap()
                         .addComponent(header)
+                        .addGap(MainFrame.SMALL_GAP)
+                        .addComponent(errorLabel)
                         .addGap(MainFrame.LARGE_GAP)
                         .addComponent(nameLabel)
                         .addGap(MainFrame.SMALL_GAP)
@@ -135,7 +155,24 @@ public class StartWindow extends JFrame {
         );
     }
 
-    private void send() {
-
+    private void send() throws IOException {
+        Socket socket = new Socket(MainFrame.SERVER_ADDRESS,5555);
+        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+        out.writeUTF(isLoginState ? "LOGIN" : "REGISTRATION");
+        out.writeUTF(nameField.getText());
+        out.writeUTF(passwordField.getText());
+        DataInputStream in = new DataInputStream(socket.getInputStream());
+        String state = in.readUTF();
+        if(!state.equals("OK")) {
+            if(state.startsWith("ERROR")) {
+                errorLabel.setText(state.substring(7));
+            }
+        } else
+        {
+            MainFrame.start(this);
+        }
+        out.close();
+        in.close();
+        socket.close();
     }
 }

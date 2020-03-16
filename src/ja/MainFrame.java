@@ -34,7 +34,7 @@ public class MainFrame extends JFrame {
     public static final int MEDIUM_GAP = 10;
     public static final int LARGE_GAP = 15;
     private static final int SERVER_PORT = 4567;
-    private static final String SERVER_ADDRESS = "192.168.0.102";
+    public static final String SERVER_ADDRESS = "192.168.0.103";
     private final JTextField textFieldFrom;
     private final JTextField textFieldTo;
     private final JTextArea textAreaIncoming;
@@ -221,6 +221,11 @@ public class MainFrame extends JFrame {
     public static void main(String[] args) {
         StartWindow fr = new StartWindow();
         fr.setVisible(true);
+
+    }
+
+    public static void start(JFrame frame) {
+        frame.dispose();
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
