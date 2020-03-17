@@ -33,24 +33,29 @@ public class MainFrame extends JFrame {
     public static final int SMALL_GAP = 5;
     public static final int MEDIUM_GAP = 10;
     public static final int LARGE_GAP = 15;
-    private static final int SERVER_PORT = 4567;
-    public static final String SERVER_ADDRESS = "192.168.0.103";
+    public static final int WEB_PORT = 4567;
+    public static final int SERVER_PORT = 5555;
+    public static final String SERVER_ADDRESS = "192.168.0.107";
     private final JTextField textFieldFrom;
     private final JTextField textFieldTo;
     private final JTextArea textAreaIncoming;
     private final JTextArea textAreaOutgoing;
 
+    private boolean toStopAll = false;
     private ArrayList<User> usersList;
     private String name;
 
-    public MainFrame() {
+    public MainFrame(String name) {
         super(FRAME_TITLE);
+        this.name = name;
         setWindowState();
         textAreaIncoming = new JTextArea(INCOMING_AREA_DEFAULT_ROWS, 0);
         textAreaIncoming.setEditable(false);
         textFieldFrom = new JTextField(FROM_FIELD_DEFAULT_COLUMNS);
         textFieldTo = new JTextField(TO_FIELD_DEFAULT_COLUMNS);
         textAreaOutgoing = new JTextArea(OUTGOING_AREA_DEFAULT_ROWS, 0);
+        textFieldFrom.setText(name);
+        textFieldFrom.setEnabled(false);
         final JScrollPane scrollPaneIncoming = new JScrollPane(textAreaIncoming);
         final JLabel labelFrom = new JLabel("От");
         final JLabel labelTo = new JLabel("Получатель");
@@ -109,33 +114,32 @@ public class MainFrame extends JFrame {
                 .addComponent(messagePanel)
                 .addContainerGap());
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    final ServerSocket serverSocket =
-                            new ServerSocket(SERVER_PORT);
-                    while (!Thread.interrupted()) {
-                        final Socket socket = serverSocket.accept();
-                        final DataInputStream in = new DataInputStream(socket.getInputStream());
-                        final String senderName = in.readUTF();
-                        final String message = in.readUTF();
-                        socket.close();
-                        final String address =
-                                ((InetSocketAddress) socket
-                                        .getRemoteSocketAddress())
-                                        .getAddress()
-                                        .getHostAddress();
-                        textAreaIncoming.append(senderName + " (" + address + "): " + message + "\n");
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(MainFrame.this,
-                            "Ошибка в работе сервера", "Ошибка",
-                            JOptionPane.ERROR_MESSAGE);
+        new Thread(() -> {
+            try {
+                final ServerSocket serverSocket = new ServerSocket(WEB_PORT);
+                while (!Thread.interrupted()) {
+                    checkIfStop();
+                    final Socket socket = serverSocket.accept();
+                    final DataInputStream in = new DataInputStream(socket.getInputStream());
+                    final String senderName = in.readUTF();
+                    final String message = in.readUTF();
+                    socket.close();
+                    final String address =
+                            ((InetSocketAddress) socket
+                                    .getRemoteSocketAddress())
+                                    .getAddress()
+                                    .getHostAddress();
+                    textAreaIncoming.append(senderName + " (" + address + "): " + message + "\n");
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(MainFrame.this,
+                        "Ошибка в работе сервера", "Ошибка",
+                        JOptionPane.ERROR_MESSAGE);
             }
         }).start();
+
+        startServerThread();
     }
 
     private void sendMessage() {
@@ -161,7 +165,7 @@ public class MainFrame extends JFrame {
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            final Socket socket = new Socket(destinationAddress, SERVER_PORT);
+            final Socket socket = new Socket(destinationAddress, WEB_PORT);
             final DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             out.writeUTF(senderName);
             out.writeUTF(message);
@@ -182,33 +186,68 @@ public class MainFrame extends JFrame {
     }
 
     private void startServerThread() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Socket socket;
-                while(!Thread.interrupted()){
-                    try {
-                        socket = new Socket(SERVER_ADDRESS,5555);
-                        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                        out.writeUTF("GET");
-                        DataInputStream input = new DataInputStream(socket.getInputStream());
-                        String response = input.readUTF();
-                        if(response.equals("OK")) {
-                            usersList = new ArrayList<>(10);
-                            while(input.available() > 0) {
-                                usersList.add(new User(input.readUTF()));
+        new Thread(() -> {
+            Socket socket;
+            while(!Thread.interrupted()){
+                try {
+                    checkIfStop();
+                    socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
+                    DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                    out.writeUTF("GET");
+                    DataInputStream input = new DataInputStream(socket.getInputStream());
+                    String response = input.readUTF();
+                    if(response.equals("OK")) {
+                        usersList = new ArrayList<>(10);
+                        while(input.available() > 0) {
+                            usersList.add(new User(input.readUTF()));
+                        }
+                    } else
+                    {
+                        if(response.startsWith("ERROR:")) {
+                            response = response.substring(7);
+                            if(response.equals("NEED LOGIN")) {
+                                toLoginAgain();
                             }
                         }
-                    } catch (IOException e) {
-                        e.printStackTrace();
                     }
+                    sendMulticastNotification();
+                    Thread.sleep(12000);
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         }).start();
     }
 
-    private void sendMulticastNotification() {
+    private void toLoginAgain() {
+        JOptionPane.showMessageDialog(MainFrame.this,
+                "Требуется вход", FRAME_TITLE, JOptionPane.INFORMATION_MESSAGE);
+        this.setVisible(false);
+        toStopAll = true;
+        StartWindow frame = new StartWindow();
+        frame.setMainFrameCreation(false);
+        frame.setFrameToCall(this);
+    }
 
+    private void sendMulticastNotification() throws IOException {
+        DatagramSocket socket = new DatagramSocket(SERVER_PORT);
+        DatagramPacket dgram;
+        dgram = new DatagramPacket(name.getBytes(), name.getBytes().length);
+        for (User u : usersList) {
+            dgram.setAddress(InetAddress.getByName(u.getIp()));
+            socket.send(dgram);
+        }
+        socket.close();
+    }
+
+    private synchronized void checkIfStop() {
+        if(toStopAll) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void setWindowState() {
@@ -219,20 +258,21 @@ public class MainFrame extends JFrame {
     }
 
     public static void main(String[] args) {
-        StartWindow fr = new StartWindow();
-        fr.setVisible(true);
-
+        SwingUtilities.invokeLater(StartWindow::new);
     }
 
-    public static void start(JFrame frame) {
+    public static void start(JFrame frame, String name) {
         frame.dispose();
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                final MainFrame frame = new MainFrame();
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.setVisible(true);
-            }
+        SwingUtilities.invokeLater(() -> {
+            final MainFrame frame1 = new MainFrame(name);
+            frame1.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame1.setVisible(true);
         });
+    }
+
+    public synchronized void continueAll() {
+        setVisible(true);
+        toStopAll = false;
+        notifyAll();
     }
 }

@@ -12,9 +12,14 @@ import java.net.Socket;
 
 public class StartWindow extends JFrame {
 
+    private MainFrame frame = null;
+
     private boolean isLoginState = true;
 
+    private boolean CREATE_MAINFRAME = true;
+
     private JTextField nameField = new JTextField(15);
+
     private JTextField passwordField = new JTextField(15);
     private JButton sendButton = new JButton("Принять");
     private JTextField passwordField2 = new JTextField(15);
@@ -22,46 +27,43 @@ public class StartWindow extends JFrame {
     private JLabel nameLabel = new JLabel("Логин");
     private JLabel passwordLabel = new JLabel("Пароль");
     private JLabel errorLabel = new JLabel("");
-
     private GroupLayout layout;
 
     private final int width = 300;
+
     private final int height = 300;
 
     public StartWindow() {
         super("Вход");
+
+        setVisible(true);
         setSize(new Dimension(width, height));
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
         setResizable(false);
 
         layout = new GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
+        setLayout(layout);
 
         Toolkit kit = Toolkit.getDefaultToolkit();
         setLocation((kit.getScreenSize().width - width) / 2, (kit.getScreenSize().height - height) / 2);
-        sendButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                if(isLoginState || passwordField.getText().equals(passwordField2.getText())) {
-                    try {
-                        send();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else
-                {
-                    errorLabel.setText("Пароли не совпадают");
+        sendButton.addActionListener(actionEvent -> {
+            if(isLoginState || passwordField.getText().equals(passwordField2.getText())) {
+                try {
+                    send();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
+            } else
+            {
+                errorLabel.setText("Пароли не совпадают");
             }
         });
-        changeStateButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                isLoginState = !isLoginState;
-                if(isLoginState)
-                    setLoginInterface();
-                else
-                    setRegisterInterface();
-            }
+        changeStateButton.addActionListener(actionEvent -> {
+            isLoginState = !isLoginState;
+            if(isLoginState)
+                setLoginInterface();
+            else
+                setRegisterInterface();
         });
         setLoginInterface();
     }
@@ -156,23 +158,44 @@ public class StartWindow extends JFrame {
     }
 
     private void send() throws IOException {
-        Socket socket = new Socket(MainFrame.SERVER_ADDRESS,5555);
+        Socket socket = new Socket(MainFrame.SERVER_ADDRESS, MainFrame.SERVER_PORT);
         DataOutputStream out = new DataOutputStream(socket.getOutputStream());
         out.writeUTF(isLoginState ? "LOGIN" : "REGISTRATION");
         out.writeUTF(nameField.getText());
         out.writeUTF(passwordField.getText());
         DataInputStream in = new DataInputStream(socket.getInputStream());
         String state = in.readUTF();
+        out.close();
+        in.close();
+        socket.close();
         if(!state.equals("OK")) {
             if(state.startsWith("ERROR")) {
                 errorLabel.setText(state.substring(7));
             }
         } else
         {
-            MainFrame.start(this);
+            setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+            if(CREATE_MAINFRAME)
+                MainFrame.start(this, nameField.getText());
+            else
+            {
+                if(frame != null)
+                    frame.continueAll();
+                //TODO
+                dispose();
+            }
         }
-        out.close();
-        in.close();
-        socket.close();
+    }
+
+    public MainFrame getFrameToCall() {
+        return frame;
+    }
+
+    public void setFrameToCall(MainFrame frame) {
+        this.frame = frame;
+    }
+
+    public void setMainFrameCreation(boolean CREATE_MAINFRAME) {
+        this.CREATE_MAINFRAME = CREATE_MAINFRAME;
     }
 }
