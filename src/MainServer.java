@@ -6,9 +6,10 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 
 public class MainServer {
-    private static final int SERVER_PORT = 4567;
+    private static final int SERVER_PORT = 5555;
 
     private ArrayList<User> users = new ArrayList<>(10);
     private HashSet<UserDTO> usersDTO = new HashSet<>();
@@ -28,11 +29,7 @@ public class MainServer {
                         e.printStackTrace();
                     }
                     synchronized(usersDTO) {
-                        for(UserDTO u : usersDTO) {
-                            if(System.currentTimeMillis() - u.getLastCheck().getTime() < 30000) {
-                                usersDTO.remove(u);
-                            }
-                        }
+                        usersDTO.removeIf(u -> System.currentTimeMillis() - u.getLastCheck().getTime() > 30000);
                     }
                 }
             }
@@ -57,7 +54,7 @@ public class MainServer {
                         if (state.equals("GET")) {
                             UserDTO userDTO = getIfOnline(userIp);
                             if (userDTO == null) {
-                                out.writeUTF("ERROR: Firstly you need to log in");
+                                out.writeUTF("ERROR: NEED LOGIN");
                             } else
                             {
                                 userDTO.setLastCheck(new Date());
@@ -73,7 +70,7 @@ public class MainServer {
                             } else 
                             {
                                 if (state.equals("REGISTRATION")) {
-                                    toRegister(user, name, password, out);
+                                    toRegister(user, userIp, name, password, out);
                                 }
                             }
                         }
@@ -88,7 +85,7 @@ public class MainServer {
         }).start();
     }
 
-    private void toRegister(User user, String name, String password, DataOutputStream out) throws IOException {
+    private void toRegister(User user, String userIp, String name, String password, DataOutputStream out) throws IOException {
         if (user != null) {
             out.writeUTF("ERROR: This user already exist");
         } else
@@ -96,6 +93,8 @@ public class MainServer {
             User u = new User(name, password);
             users.add(u);
             out.writeUTF("OK");
+            UserDTO user1 = new UserDTO(userIp, name, new Date());
+            addUserDTO(user1);
         }
     }
 
@@ -104,7 +103,6 @@ public class MainServer {
             for (UserDTO userDTO : usersDTO) {
                 if (!userDTO.getIp().equals(userIp)) {
                     out.writeUTF(userDTO.getIp());
-                    out.writeUTF(userDTO.getName());
                 }
             }
         }
@@ -112,7 +110,7 @@ public class MainServer {
     
     private void toLogIn (User user, String ip, String password, DataOutputStream out) throws IOException {
         if(user == null) {
-            out.writeUTF("ERROR: You need registration");
+            out.writeUTF("ERROR: Wrong name");
             return;
         }
         if(user.getPassword().equals(password)) {
