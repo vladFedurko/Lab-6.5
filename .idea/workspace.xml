@@ -9,15 +9,11 @@
     <list default="true" id="fa1fc7f5-78f4-46a7-9ea7-19a9a687095d" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/ja/MainFrame$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/Lab 6,5/ja/MainFrame$1.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/ja/MainFrame$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/ja/MainFrame$3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/ja/MainFrame$4.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/ja/MainFrame.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/Lab 6,5/ja/MainFrame.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/ja/StartWindow$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/ja/StartWindow$2.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/ja/StartWindow.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/Lab 6,5/ja/StartWindow.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/ja/User.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/Lab 6,5/ja/User.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ja/MainFrame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ja/MainFrame.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ja/StartWindow.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ja/StartWindow.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ja/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ja/User.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -56,7 +52,7 @@
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="extract.method.default.visibility" value="private" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../Lab 6.5 server" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_package_manager_path" value="npm" />
     <property name="project.structure.last.edited" value="Modules" />
     <property name="project.structure.proportion" value="0.15" />
@@ -130,7 +126,8 @@
       <workItem from="1584170973768" duration="2277000" />
       <workItem from="1584265364577" duration="3935000" />
       <workItem from="1584360612474" duration="18672000" />
-      <workItem from="1584427640003" duration="2190000" />
+      <workItem from="1584427640003" duration="3292000" />
+      <workItem from="1585836793333" duration="6672000" />
     </task>
     <servers />
   </component>

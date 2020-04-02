@@ -4,22 +4,15 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
-import javax.swing.BorderFactory;
-import javax.swing.GroupLayout;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
+
 @SuppressWarnings("serial")
 
 public class MainFrame extends JFrame {
@@ -35,13 +28,15 @@ public class MainFrame extends JFrame {
     public static final int LARGE_GAP = 15;
     public static final int WEB_PORT = 4567;
     public static final int SERVER_PORT = 5555;
-    public static final String SERVER_ADDRESS = "192.168.0.107";
+    public static final String SERVER_ADDRESS = "192.168.0.102";
     private final JTextField textFieldFrom;
     private final JTextField textFieldTo;
     private final JTextArea textAreaIncoming;
     private final JTextArea textAreaOutgoing;
+    private JList<String> onlineUsersList;
 
     private boolean toStopAll = false;
+    private ArrayList<String> ipList;
     private ArrayList<User> usersList;
     private String name;
 
@@ -69,6 +64,17 @@ public class MainFrame extends JFrame {
                 sendMessage();
             }
         });
+
+        onlineUsersList = new JList<>();
+        onlineUsersList.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getButton() == 1 && e.getClickCount() == 2) {
+
+                }
+            }
+        });
+        JScrollPane usersListScrollPane = new JScrollPane(onlineUsersList);
+        usersListScrollPane.setMaximumSize(new Dimension(120, scrollPaneOutgoing.getMaximumSize().height));
 
         final GroupLayout layout2 = new GroupLayout(messagePanel);
         messagePanel.setLayout(layout2);
@@ -104,12 +110,17 @@ public class MainFrame extends JFrame {
         layout1.setHorizontalGroup(layout1.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout1.createParallelGroup()
-                        .addComponent(scrollPaneIncoming)
+                        .addGroup(layout1.createSequentialGroup()
+                                .addComponent(scrollPaneIncoming)
+                                .addGap(LARGE_GAP)
+                                .addComponent(usersListScrollPane))
                         .addComponent(messagePanel))
                 .addContainerGap());
         layout1.setVerticalGroup(layout1.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(scrollPaneIncoming)
+                .addGroup(layout1.createParallelGroup()
+                        .addComponent(scrollPaneIncoming)
+                        .addComponent(usersListScrollPane))
                 .addGap(MEDIUM_GAP)
                 .addComponent(messagePanel)
                 .addContainerGap());
@@ -188,6 +199,13 @@ public class MainFrame extends JFrame {
     private void startServerThread() {
         new Thread(() -> {
             Socket socket;
+            DatagramSocket datagramSocket = null;
+            try {
+                datagramSocket = new DatagramSocket(SERVER_PORT);
+            } catch (SocketException e) {
+                e.printStackTrace();
+            }
+            startReceiveThread();
             while(!Thread.interrupted()){
                 try {
                     checkIfStop();
@@ -197,10 +215,11 @@ public class MainFrame extends JFrame {
                     DataInputStream input = new DataInputStream(socket.getInputStream());
                     String response = input.readUTF();
                     if(response.equals("OK")) {
-                        usersList = new ArrayList<>(10);
+                        ipList = new ArrayList<>(10);
                         while(input.available() > 0) {
-                            usersList.add(new User(input.readUTF()));
+                            ipList.add(input.readUTF());
                         }
+                        this.updateOnlineUsersList();
                     } else
                     {
                         if(response.startsWith("ERROR:")) {
@@ -210,7 +229,7 @@ public class MainFrame extends JFrame {
                             }
                         }
                     }
-                    sendMulticastNotification();
+                    sendMulticastNotification(datagramSocket);
                     Thread.sleep(12000);
                 } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
@@ -229,15 +248,64 @@ public class MainFrame extends JFrame {
         frame.setFrameToCall(this);
     }
 
-    private void sendMulticastNotification() throws IOException {
-        DatagramSocket socket = new DatagramSocket(SERVER_PORT);
+    private void sendMulticastNotification(DatagramSocket socket) throws IOException {
         DatagramPacket dgram;
         dgram = new DatagramPacket(name.getBytes(), name.getBytes().length);
-        for (User u : usersList) {
-            dgram.setAddress(InetAddress.getByName(u.getIp()));
+        for (String u : ipList) {
+            dgram.setAddress(InetAddress.getByName(u));
             socket.send(dgram);
         }
         socket.close();
+    }
+
+    private void startReceiveThread() {
+        new Thread(() -> {
+            byte[] b = new byte[1000];
+            DatagramPacket dgram = new DatagramPacket(b, b.length);
+            MulticastSocket socket;
+            long time;
+            while (!Thread.interrupted()) {
+                checkIfStop();
+                try {
+                    socket = new MulticastSocket(SERVER_PORT);
+                    for(String u : ipList) {
+                        socket.joinGroup(InetAddress.getByName(u));
+                    }
+                    socket.setSoTimeout(12000);
+                    time = System.currentTimeMillis() + 12000;
+                    while (time < System.currentTimeMillis()) {
+                        socket.receive(dgram);
+                        String msg = new String(dgram.getData(), dgram.getOffset(), dgram.getLength());
+                        this.addName(msg, dgram.getAddress().getHostAddress());
+                    }
+                } catch (SocketTimeoutException ignored) {
+
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
+    private void addName (String name, String ip) {
+        boolean isExist = false;
+        for(User u : usersList) {
+            if(u.getIp().equals(ip)) {
+                u.setName(name);
+                isExist = true;
+            }
+        }
+        if(!isExist) {
+            usersList.add(new User(ip, name));
+        }
+        this.updateOnlineUsersList();
+    }
+
+    private void updateOnlineUsersList() {
+        usersList.removeIf(user -> !ipList.contains(user.getIp()));
+        onlineUsersList.setListData((String[]) usersList.toArray());
+        onlineUsersList.repaint();
     }
 
     private synchronized void checkIfStop() {
