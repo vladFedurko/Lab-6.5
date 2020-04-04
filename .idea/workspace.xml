@@ -7,19 +7,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fa1fc7f5-78f4-46a7-9ea7-19a9a687095d" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/out/production/Lab 6,5/ja/PrivateTab$1.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/out/production/Lab 6,5/ja/PrivateTab$2.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/out/production/Lab 6,5/ja/PrivateTab.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ja/PrivateTab.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/out/artifacts/Lab_6_5_jar/Lab 6,5.jar" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/Lab_6_5_jar/Lab 6,5.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/META-INF/Lab 6,5.kotlin_module" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/ja/MainFrame$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/ja/MainFrame$2.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/ja/MainFrame.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/Lab 6,5/ja/MainFrame.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/ja/PrivateTab$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/Lab 6,5/ja/PrivateTab$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/ja/PrivateTab.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/Lab 6,5/ja/PrivateTab.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/Lab 6,5/ja/StartWindow.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/Lab 6,5/ja/StartWindow.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ja/MainFrame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ja/MainFrame.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ja/StartWindow.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ja/StartWindow.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -77,7 +71,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="JAR Application.Lab 6,5.jar">
+  <component name="RunManager" selected="Application.Main">
     <configuration name="Main" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="ja.MainFrame" />
       <module name="Lab 6,5" />
@@ -112,8 +106,8 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="JAR Application.Lab 6,5.jar" />
         <item itemvalue="Application.MainFrame" />
+        <item itemvalue="JAR Application.Lab 6,5.jar" />
       </list>
     </recent_temporary>
   </component>
@@ -136,6 +130,8 @@
       <workItem from="1584427640003" duration="3292000" />
       <workItem from="1585836793333" duration="8206000" />
       <workItem from="1585938319220" duration="7097000" />
+      <workItem from="1585990872802" duration="11336000" />
+      <workItem from="1586003331260" duration="252000" />
     </task>
     <servers />
   </component>

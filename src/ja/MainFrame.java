@@ -86,22 +86,13 @@ public class MainFrame extends JFrame {
     public void sendMessage(String message, String senderName, String destinationAddress) {
         try {
             if (senderName.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                        "Введите имя отправителя", "Ошибка",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
+                throw new NullPointerException("ja.MainFrame sendMessage senderName is empty");
             }
             if (destinationAddress.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                        "Введите адрес узла-получателя", "Ошибка",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
+                throw new NullPointerException("ja.MainFrame sendMessage destinationAddress is empty");
             }
             if (message.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                        "Введите текст сообщения", "Ошибка",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
+                throw new NullPointerException("ja.MainFrame sendMessage message is empty");
             }
             final Socket socket = new Socket(destinationAddress, WEB_PORT);
             final DataOutputStream out = new DataOutputStream(socket.getOutputStream());
@@ -121,15 +112,39 @@ public class MainFrame extends JFrame {
         }
     }
 
+    private void deleteTabsWithOfflineUsers() {
+        for(int i = 0; i < tabbedPane.getTabCount(); ++i) {
+            boolean isExist = false;
+            String userIp = ((PrivateTab)tabbedPane.getComponentAt(i)).getIp();
+            if(userIp.equals("127.0.0.1")) {
+                continue;
+            }
+            for(String ip : ipList) {
+                if(userIp.equals(ip)) {
+                    isExist = true;
+                    break;
+                }
+            }
+            if(!isExist) {
+                if (tabbedPane.getSelectedIndex() == i) {
+                    JOptionPane.showMessageDialog(MainFrame.this,
+                            "Пользователь вышел из сети", "Warning",
+                            JOptionPane.WARNING_MESSAGE);
+                }
+                tabbedPane.remove(i);
+            }
+        }
+    }
+
     private PrivateTab findByIpInTabbedPane(String ip) {
-        PrivateTab tab = null;
+        PrivateTab tab;
         for(int i = 0; i < tabbedPane.getTabCount(); ++i) {
             tab = (PrivateTab)tabbedPane.getComponentAt(i);
             if(tab.getIp().equals(ip)) {
                 return tab;
             }
         }
-        return tab;
+        return null;
     }
 
     private int getIndexByNameInTabbedPane(String name) {
@@ -144,12 +159,6 @@ public class MainFrame extends JFrame {
     private void startServerThread() {
         new Thread(() -> {
             Socket socket;
-            DatagramSocket datagramSocket = null;
-            try {
-                datagramSocket = new DatagramSocket(SERVER_PORT);
-            } catch (SocketException e) {
-                e.printStackTrace();
-            }
             startReceiveThread();
             while(!Thread.interrupted()){
                 try {
@@ -165,6 +174,7 @@ public class MainFrame extends JFrame {
                             ipList.add(input.readUTF());
                         }
                         this.updateOnlineUsersList();
+                        this.deleteTabsWithOfflineUsers();
                     } else
                     {
                         if(response.startsWith("ERROR:")) {
@@ -174,7 +184,7 @@ public class MainFrame extends JFrame {
                             }
                         }
                     }
-                    sendMulticastNotification(datagramSocket);
+                    sendMulticastNotification();
                     Thread.sleep(12000);
                 } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
@@ -193,41 +203,52 @@ public class MainFrame extends JFrame {
         frame.setFrameToCall(this);
     }
 
-    private void sendMulticastNotification(DatagramSocket socket) throws IOException {
-        DatagramPacket dgram;
-        dgram = new DatagramPacket(name.getBytes(), name.getBytes().length);
-        for (String u : ipList) {
-            dgram.setAddress(InetAddress.getByName(u));
-            socket.send(dgram);
+    private void sendMulticastNotification() throws IOException {
+        DatagramSocket socket = null;
+        try {
+            socket = new DatagramSocket();
+            DatagramPacket dgram;
+            dgram = new DatagramPacket(name.getBytes(), name.getBytes().length, InetAddress.getByName("230.1.1.1"), SERVER_PORT);
+            for(int i = 0; i < 2; ++ i)
+                socket.send(dgram);
+        } catch (SocketException e) {
+            e.printStackTrace();
         }
-        socket.close();
+        finally {
+            assert socket != null;
+            socket.close();
+        }
     }
 
     private void startReceiveThread() {
         new Thread(() -> {
             byte[] b = new byte[1000];
             DatagramPacket dgram = new DatagramPacket(b, b.length);
-            MulticastSocket socket;
+            MulticastSocket socket = null;
             long time;
             while (!Thread.interrupted()) {
                 checkIfStop();
                 try {
                     socket = new MulticastSocket(SERVER_PORT);
-                    for(String u : ipList) {
-                        socket.joinGroup(InetAddress.getByName(u));
-                    }
+                    socket.joinGroup(InetAddress.getByName("230.1.1.1"));
                     socket.setSoTimeout(12000);
                     time = System.currentTimeMillis() + 12000;
-                    while (time < System.currentTimeMillis()) {
+                    while (time > System.currentTimeMillis()) {
                         socket.receive(dgram);
                         String msg = new String(dgram.getData(), dgram.getOffset(), dgram.getLength());
                         this.addName(msg, dgram.getAddress().getHostAddress());
                     }
+                    socket.leaveGroup(InetAddress.getByName("230.1.1.1"));
+                    socket.close();
                 } catch (SocketTimeoutException ignored) {
 
                 }
                 catch (IOException e) {
                     e.printStackTrace();
+                }
+                finally {
+                    if(socket != null)
+                        socket.close();
                 }
             }
         }).start();
@@ -258,11 +279,11 @@ public class MainFrame extends JFrame {
 
     private void updateOnlineUsersList() {
         usersList.removeIf(user -> !ipList.contains(user.getIp()));
-        Object[] objects = usersList.toArray();
-        int size = objects.length;
+        int size = usersList.size();
         String[] strings = new String[size];
-        for (int i = 0; i < size; i++)
-            strings[i] = objects[i].toString();
+        for (int i = 0; i < size; i++) {
+            strings[i] = usersList.get(i).getName();
+        }
         ((PrivateTab)tabbedPane.getSelectedComponent()).setUsersList(strings);
     }
 
