@@ -1,6 +1,8 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -39,8 +41,7 @@ public class MainServer {
                 final ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
                 while(!Thread.interrupted()){
                     Socket socket = serverSocket.accept();
-                    String userIp = socket.getInetAddress().getHostAddress();
-
+                    String userIp = ((InetSocketAddress)socket.getRemoteSocketAddress()).getAddress().getHostAddress();
                     DataInputStream inputStream = new DataInputStream(socket.getInputStream());
                     String state = inputStream.readUTF();
                     DataOutputStream out = new DataOutputStream(socket.getOutputStream());
