@@ -2,8 +2,6 @@ package ja;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -30,10 +28,9 @@ public class StartWindow extends JFrame {
     private GroupLayout layout;
 
     private final int width = 300;
-
     private final int height = 300;
 
-    public StartWindow() {
+    StartWindow() {
         super("Вход");
 
         setVisible(true);
@@ -91,17 +88,17 @@ public class StartWindow extends JFrame {
                 layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(header)
-                .addGap(MainFrame.SMALL_GAP)
+                .addGap(PrivateTab.SMALL_GAP)
                 .addComponent(errorLabel)
-                .addGap(MainFrame.LARGE_GAP)
+                .addGap(PrivateTab.LARGE_GAP)
                 .addComponent(nameLabel)
-                .addGap(MainFrame.SMALL_GAP)
+                .addGap(PrivateTab.SMALL_GAP)
                 .addComponent(nameField, 22, 22, 22)
-                .addGap(MainFrame.MEDIUM_GAP)
+                .addGap(PrivateTab.MEDIUM_GAP)
                 .addComponent(passwordLabel)
-                .addGap(MainFrame.SMALL_GAP)
+                .addGap(PrivateTab.SMALL_GAP)
                 .addComponent(passwordField, 22, 22, 22)
-                .addGap(MainFrame.MEDIUM_GAP)
+                .addGap(PrivateTab.MEDIUM_GAP)
                 .addGroup(layout.createParallelGroup()
                         .addComponent(sendButton)
                         .addComponent(changeStateButton))
@@ -135,21 +132,21 @@ public class StartWindow extends JFrame {
                 layout.createSequentialGroup()
                         .addContainerGap()
                         .addComponent(header)
-                        .addGap(MainFrame.SMALL_GAP)
+                        .addGap(PrivateTab.SMALL_GAP)
                         .addComponent(errorLabel)
-                        .addGap(MainFrame.LARGE_GAP)
+                        .addGap(PrivateTab.LARGE_GAP)
                         .addComponent(nameLabel)
-                        .addGap(MainFrame.SMALL_GAP)
+                        .addGap(PrivateTab.SMALL_GAP)
                         .addComponent(nameField, 22, 22, 22)
-                        .addGap(MainFrame.MEDIUM_GAP)
+                        .addGap(PrivateTab.MEDIUM_GAP)
                         .addComponent(passwordLabel)
-                        .addGap(MainFrame.SMALL_GAP)
+                        .addGap(PrivateTab.SMALL_GAP)
                         .addComponent(passwordField, 22, 22, 22)
-                        .addGap(MainFrame.MEDIUM_GAP)
+                        .addGap(PrivateTab.MEDIUM_GAP)
                         .addComponent(passwordLabel2)
-                        .addGap(MainFrame.SMALL_GAP)
+                        .addGap(PrivateTab.SMALL_GAP)
                         .addComponent(passwordField2, 22, 22, 22)
-                        .addGap(MainFrame.MEDIUM_GAP)
+                        .addGap(PrivateTab.MEDIUM_GAP)
                         .addGroup(layout.createParallelGroup()
                                 .addComponent(sendButton)
                                 .addComponent(changeStateButton))
@@ -187,15 +184,11 @@ public class StartWindow extends JFrame {
         }
     }
 
-    public MainFrame getFrameToCall() {
-        return frame;
-    }
-
-    public void setFrameToCall(MainFrame frame) {
+    void setFrameToCall(MainFrame frame) {
         this.frame = frame;
     }
 
-    public void setMainFrameCreation(boolean CREATE_MAINFRAME) {
+    void setMainFrameCreation(boolean CREATE_MAINFRAME) {
         this.CREATE_MAINFRAME = CREATE_MAINFRAME;
     }
 }
