@@ -6,7 +6,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 
 public class MainServer {
     private static final int SERVER_PORT = 5555;
@@ -19,18 +18,15 @@ public class MainServer {
     }
 
     private void addCleaner() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!Thread.interrupted()) {
-                    try {
-                        Thread.sleep(30000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    synchronized(usersDTO) {
-                        usersDTO.removeIf(u -> System.currentTimeMillis() - u.getLastCheck().getTime() > 30000);
-                    }
+        new Thread(() -> {
+            while (!Thread.interrupted()) {
+                try {
+                    Thread.sleep(30000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                synchronized(usersDTO) {
+                    usersDTO.removeIf(u -> System.currentTimeMillis() - u.getLastCheck().getTime() > 30000);
                 }
             }
         }).start();
@@ -38,49 +34,46 @@ public class MainServer {
 
     public MainServer(String[] args) {
         addCleaner();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    final ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
-                    while(!Thread.interrupted()){
-                        Socket socket = serverSocket.accept();
-                        String userIp = socket.getInetAddress().getHostAddress();
-                        
-                        DataInputStream inputStream = new DataInputStream(socket.getInputStream());
-                        String state = inputStream.readUTF();
-                        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                        
-                        if (state.equals("GET")) {
-                            UserDTO userDTO = getIfOnline(userIp);
-                            if (userDTO == null) {
-                                out.writeUTF("ERROR: NEED LOGIN");
-                            } else
-                            {
-                                userDTO.setLastCheck(new Date());
-                                out.writeUTF("OK");
-                                sendUsersInform(out, userIp);
-                            }
-                        } else {
-                            String name = inputStream.readUTF();
-                            String password = inputStream.readUTF();
-                            User user = findByName(name);
-                            if (state.equals("LOGIN")) {
-                                toLogIn(user, userIp, password, out);
-                            } else 
-                            {
-                                if (state.equals("REGISTRATION")) {
-                                    toRegister(user, userIp, name, password, out);
-                                }
+        new Thread(() -> {
+            try {
+                final ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
+                while(!Thread.interrupted()){
+                    Socket socket = serverSocket.accept();
+                    String userIp = socket.getInetAddress().getHostAddress();
+
+                    DataInputStream inputStream = new DataInputStream(socket.getInputStream());
+                    String state = inputStream.readUTF();
+                    DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+                    if (state.equals("GET")) {
+                        UserDTO userDTO = getIfOnline(userIp);
+                        if (userDTO == null) {
+                            out.writeUTF("ERROR: NEED LOGIN");
+                        } else
+                        {
+                            userDTO.setLastCheck(new Date());
+                            out.writeUTF("OK");
+                            sendUsersInform(out, userIp);
+                        }
+                    } else {
+                        String name = inputStream.readUTF();
+                        String password = inputStream.readUTF();
+                        User user = findByName(name);
+                        if (state.equals("LOGIN")) {
+                            toLogIn(user, userIp, password, out);
+                        } else
+                        {
+                            if (state.equals("REGISTRATION")) {
+                                toRegister(user, userIp, name, password, out);
                             }
                         }
-                        out.close();
-                        inputStream.close();
-                        socket.close();
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    out.close();
+                    inputStream.close();
+                    socket.close();
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }).start();
     }
