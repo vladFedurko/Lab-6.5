@@ -1,35 +1,31 @@
 package ja;
 
-public class User {
+class User {
 
     private String ip;
-    private String name = null;
+    private String name;
 
     private long lastNotification;
 
-    public User(String ip, String name) {
+    User(String ip, String name) {
         this.ip = ip;
         this.name = name;
         lastNotification = System.currentTimeMillis();
     }
 
-    public long getLastNotification() {
+    long getLastNotification() {
         return lastNotification;
     }
 
-    public String getIp() {
+    String getIp() {
         return ip;
     }
 
-    public void setIp(String ip) {
-        this.ip = ip;
-    }
-
-    public String getName() {
+    String getName() {
         return name;
     }
 
-    public void setName(String name) {
+    void setName(String name) {
         this.name = name;
     }
 }

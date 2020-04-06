@@ -7,7 +7,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-public class PrivateTab extends JPanel {
+class PrivateTab extends JPanel {
 
     static final int SMALL_GAP = 5;
     static final int MEDIUM_GAP = 10;
@@ -21,16 +21,13 @@ public class PrivateTab extends JPanel {
     private final JTextArea textAreaOutgoing;
     private JList<String> onlineUsersList;
 
-    private final MainFrame frame;
-
     private String ip;
 
     private String interlocutorName;
 
-    public PrivateTab(MainFrame frame, String interlocutorName, String ip) {
+    PrivateTab(MainFrame frame, String interlocutorName, String ip) {
         super();
         this.interlocutorName = interlocutorName;
-        this.frame = frame;
         this.ip = ip;
         textAreaIncoming = new JTextArea(INCOMING_AREA_DEFAULT_ROWS, 0);
         textAreaIncoming.setEditable(false);
@@ -54,7 +51,7 @@ public class PrivateTab extends JPanel {
                 final String senderName = textFieldFrom.getText();
                 final String message = textAreaOutgoing.getText();
                 frame.sendMessage(message, senderName, ip);
-                textAreaIncoming.append("Я -> " + ip + ": " + message + "\n");
+                textAreaIncoming.append("Я (" + frame.getName() + ") : " + message + "\n");
                 textAreaOutgoing.setText("");
             }
         });
@@ -129,15 +126,11 @@ public class PrivateTab extends JPanel {
         textAreaIncoming.append(message);
     }
 
-    public void setIp(String ip) {
-        this.ip = ip;
-    }
-
     String getIp() {
         return ip;
     }
 
-    public String getInterlocutorName() {
+    String getInterlocutorName() {
         return interlocutorName;
     }
 }

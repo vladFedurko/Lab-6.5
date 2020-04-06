@@ -17,9 +17,9 @@ public class MainFrame extends JFrame {
     private static final int FRAME_MINIMUM_HEIGHT = 500;
     private static final int WEB_PORT = 4567;
     static final int SERVER_PORT = 5555;
+    private static final int CASTING_PORT = 5556;
     static final String SERVER_ADDRESS = "192.168.0.100";
 
-    private boolean toStopAll = false;
     private ArrayList<User> usersList = new ArrayList<>();
     private JTabbedPane tabbedPane;
 
@@ -40,7 +40,6 @@ public class MainFrame extends JFrame {
             try {
                 final ServerSocket serverSocket = new ServerSocket(WEB_PORT);
                 while (!Thread.interrupted()) {
-                    checkIfStop();
                     final Socket socket = serverSocket.accept();
                     final DataInputStream in = new DataInputStream(socket.getInputStream());
                     final String senderName = in.readUTF();
@@ -55,7 +54,7 @@ public class MainFrame extends JFrame {
                     if(tab == null) {
                         tab = this.createNewPrivateTab(senderName, address);
                     }
-                    tab.write(senderName + " (" + address + "): " + message + "\n");
+                    tab.write(senderName + ": " + message + "\n");
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -74,7 +73,7 @@ public class MainFrame extends JFrame {
         return tab;
     }
 
-    public void activateTab (String name) {
+    void activateTab(String name) {
         int index = this.getIndexByNameInTabbedPane(name);
         if(index == -1) {
             tabbedPane.addTab(name, new PrivateTab(this, name, getIpByNameInUsersList(name)));
@@ -82,7 +81,7 @@ public class MainFrame extends JFrame {
             tabbedPane.setSelectedIndex(index);
     }
 
-    public void sendMessage(String message, String senderName, String destinationAddress) {
+    void sendMessage(String message, String senderName, String destinationAddress) {
         try {
             if (senderName.isEmpty()) {
                 throw new NullPointerException("ja.MainFrame sendMessage senderName is empty");
@@ -160,7 +159,7 @@ public class MainFrame extends JFrame {
         try {
             socket = new DatagramSocket();
             DatagramPacket dgram;
-            dgram = new DatagramPacket(name.getBytes(), name.getBytes().length, InetAddress.getByName("230.1.1.1"), SERVER_PORT);
+            dgram = new DatagramPacket(name.getBytes(), name.getBytes().length, InetAddress.getByName("230.1.1.1"), CASTING_PORT);
             socket.send(dgram);
         } catch (SocketException e) {
             e.printStackTrace();
@@ -178,10 +177,10 @@ public class MainFrame extends JFrame {
             MulticastSocket socket = null;
             long time;
             while (!Thread.interrupted()) {
-                checkIfStop();
                 try {
                     sendMulticastNotification();
-                    socket = new MulticastSocket(SERVER_PORT);
+                    updateOnlineUsersList();
+                    socket = new MulticastSocket(CASTING_PORT);
                     socket.joinGroup(InetAddress.getByName("230.1.1.1"));
                     socket.setSoTimeout(12000);
                     time = System.currentTimeMillis() + 12000;
@@ -240,16 +239,6 @@ public class MainFrame extends JFrame {
         deleteTabsWithOfflineUsers();
     }
 
-    private synchronized void checkIfStop() {
-        if(toStopAll) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
     private void setWindowState() {
         final Toolkit kit = Toolkit.getDefaultToolkit();
         setLocation((kit.getScreenSize().width - getWidth()) / 2,
@@ -278,11 +267,5 @@ public class MainFrame extends JFrame {
     @Override
     public void setName(String name) {
         this.name = name;
-    }
-
-    synchronized void continueAll() {
-        setVisible(true);
-        toStopAll = false;
-        notifyAll();
     }
 }

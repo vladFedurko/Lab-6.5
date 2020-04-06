@@ -8,13 +8,9 @@ import java.io.IOException;
 import java.net.Socket;
 
 
-public class StartWindow extends JFrame {
-
-    private MainFrame frame = null;
+class StartWindow extends JFrame {
 
     private boolean isLoginState = true;
-
-    private boolean CREATE_MAINFRAME = true;
 
     private JTextField nameField = new JTextField(15);
 
@@ -27,13 +23,12 @@ public class StartWindow extends JFrame {
     private JLabel errorLabel = new JLabel("");
     private GroupLayout layout;
 
-    private final int width = 300;
-    private final int height = 300;
-
     StartWindow() {
         super("Вход");
 
         setVisible(true);
+        int width = 300;
+        int height = 300;
         setSize(new Dimension(width, height));
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setResizable(false);
@@ -172,23 +167,7 @@ public class StartWindow extends JFrame {
         } else
         {
             setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-            if(CREATE_MAINFRAME)
-                MainFrame.start(this, nameField.getText());
-            else
-            {
-                if(frame != null)
-                    frame.continueAll();
-                //TODO
-                dispose();
-            }
+            MainFrame.start(this, nameField.getText());
         }
-    }
-
-    void setFrameToCall(MainFrame frame) {
-        this.frame = frame;
-    }
-
-    void setMainFrameCreation(boolean CREATE_MAINFRAME) {
-        this.CREATE_MAINFRAME = CREATE_MAINFRAME;
     }
 }
