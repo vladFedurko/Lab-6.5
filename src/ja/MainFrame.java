@@ -17,10 +17,9 @@ public class MainFrame extends JFrame {
     private static final int FRAME_MINIMUM_HEIGHT = 500;
     private static final int WEB_PORT = 4567;
     static final int SERVER_PORT = 5555;
-    static final String SERVER_ADDRESS = "192.168.0.101";
+    static final String SERVER_ADDRESS = "192.168.0.100";
 
     private boolean toStopAll = false;
-    private ArrayList<String> ipList;
     private ArrayList<User> usersList = new ArrayList<>();
     private JTabbedPane tabbedPane;
 
@@ -66,7 +65,7 @@ public class MainFrame extends JFrame {
             }
         }).start();
 
-        startServerThread();
+        startReceiveThread();
     }
 
     private PrivateTab createNewPrivateTab(String senderName, String address) {
@@ -119,8 +118,8 @@ public class MainFrame extends JFrame {
             if(userIp.equals("127.0.0.1")) {
                 continue;
             }
-            for(String ip : ipList) {
-                if(userIp.equals(ip)) {
+            for(User ip : usersList) {
+                if(userIp.equals(ip.getIp())) {
                     isExist = true;
                     break;
                 }
@@ -156,61 +155,13 @@ public class MainFrame extends JFrame {
         return -1;
     }
 
-    private void startServerThread() {
-        new Thread(() -> {
-            Socket socket;
-            startReceiveThread();
-            while(!Thread.interrupted()){
-                try {
-                    checkIfStop();
-                    socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
-                    DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                    out.writeUTF("GET");
-                    DataInputStream input = new DataInputStream(socket.getInputStream());
-                    String response = input.readUTF();
-                    if(response.equals("OK")) {
-                        ipList = new ArrayList<>(10);
-                        while(input.available() > 0) {
-                            ipList.add(input.readUTF());
-                        }
-                        this.updateOnlineUsersList();
-                        this.deleteTabsWithOfflineUsers();
-                    } else
-                    {
-                        if(response.startsWith("ERROR:")) {
-                            response = response.substring(7);
-                            if(response.equals("NEED LOGIN")) {
-                                toLoginAgain();
-                            }
-                        }
-                    }
-                    sendMulticastNotification();
-                    Thread.sleep(12000);
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-    }
-
-    private void toLoginAgain() {
-        JOptionPane.showMessageDialog(MainFrame.this,
-                "Требуется вход", FRAME_TITLE, JOptionPane.INFORMATION_MESSAGE);
-        this.setVisible(false);
-        toStopAll = true;
-        StartWindow frame = new StartWindow();
-        frame.setMainFrameCreation(false);
-        frame.setFrameToCall(this);
-    }
-
     private void sendMulticastNotification() throws IOException {
         DatagramSocket socket = null;
         try {
             socket = new DatagramSocket();
             DatagramPacket dgram;
             dgram = new DatagramPacket(name.getBytes(), name.getBytes().length, InetAddress.getByName("230.1.1.1"), SERVER_PORT);
-            for(int i = 0; i < 2; ++ i)
-                socket.send(dgram);
+            socket.send(dgram);
         } catch (SocketException e) {
             e.printStackTrace();
         }
@@ -229,6 +180,7 @@ public class MainFrame extends JFrame {
             while (!Thread.interrupted()) {
                 checkIfStop();
                 try {
+                    sendMulticastNotification();
                     socket = new MulticastSocket(SERVER_PORT);
                     socket.joinGroup(InetAddress.getByName("230.1.1.1"));
                     socket.setSoTimeout(12000);
@@ -278,13 +230,14 @@ public class MainFrame extends JFrame {
     }
 
     private void updateOnlineUsersList() {
-        usersList.removeIf(user -> !ipList.contains(user.getIp()));
+        usersList.removeIf(user -> user.getLastNotification() < System.currentTimeMillis() - 60000);
         int size = usersList.size();
         String[] strings = new String[size];
         for (int i = 0; i < size; i++) {
             strings[i] = usersList.get(i).getName();
         }
         ((PrivateTab)tabbedPane.getSelectedComponent()).setUsersList(strings);
+        deleteTabsWithOfflineUsers();
     }
 
     private synchronized void checkIfStop() {
