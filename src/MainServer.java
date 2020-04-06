@@ -1,41 +1,21 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
 
 public class MainServer {
     private static final int SERVER_PORT = 5555;
 
     private ArrayList<User> users = new ArrayList<>(10);
-    private HashSet<UserDTO> usersDTO = new HashSet<>();
     
     public static void main(String[] args){
         new MainServer(args);
     }
 
-    private void addCleaner() {
-        new Thread(() -> {
-            while (!Thread.interrupted()) {
-                try {
-                    Thread.sleep(30000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                synchronized(usersDTO) {
-                    usersDTO.removeIf(u -> System.currentTimeMillis() - u.getLastCheck().getTime() > 30000);
-                }
-            }
-        }).start();
-    }
-
     public MainServer(String[] args) {
-        addCleaner();
         new Thread(() -> {
             try {
                 final ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
@@ -46,27 +26,15 @@ public class MainServer {
                     String state = inputStream.readUTF();
                     DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
-                    if (state.equals("GET")) {
-                        UserDTO userDTO = getIfOnline(userIp);
-                        if (userDTO == null) {
-                            out.writeUTF("ERROR: NEED LOGIN");
-                        } else
-                        {
-                            userDTO.setLastCheck(new Date());
-                            out.writeUTF("OK");
-                            sendUsersInform(out, userIp);
-                        }
-                    } else {
-                        String name = inputStream.readUTF();
-                        String password = inputStream.readUTF();
-                        User user = findByName(name);
-                        if (state.equals("LOGIN")) {
-                            toLogIn(user, userIp, password, out);
-                        } else
-                        {
-                            if (state.equals("REGISTRATION")) {
-                                toRegister(user, userIp, name, password, out);
-                            }
+                    String name = inputStream.readUTF();
+                    String password = inputStream.readUTF();
+                    User user = findByName(name);
+                    if (state.equals("LOGIN")) {
+                        toLogIn(user, userIp, password, out);
+                    } else
+                    {
+                        if (state.equals("REGISTRATION")) {
+                            toRegister(user, userIp, name, password, out);
                         }
                     }
                     out.close();
@@ -87,18 +55,6 @@ public class MainServer {
             User u = new User(name, password);
             users.add(u);
             out.writeUTF("OK");
-            UserDTO user1 = new UserDTO(userIp, name, new Date());
-            addUserDTO(user1);
-        }
-    }
-
-    private void sendUsersInform (DataOutputStream out, String userIp) throws IOException {
-        synchronized (usersDTO) {
-            for (UserDTO userDTO : usersDTO) {
-                if (!userDTO.getIp().equals(userIp)) {
-                    out.writeUTF(userDTO.getIp());
-                }
-            }
         }
     }
     
@@ -109,29 +65,10 @@ public class MainServer {
         }
         if(user.getPassword().equals(password)) {
             out.writeUTF("OK");
-            UserDTO u = new UserDTO(ip, user.getName(), new Date());
-            addUserDTO(u);
         } else
         {
             out.writeUTF("ERROR: Wrong password");
         }
-    }
-
-    private void addUserDTO (UserDTO user) {
-        synchronized (usersDTO) {
-            usersDTO.add(user);
-        }
-    }
-    
-    private UserDTO getIfOnline(String ip) {
-        synchronized (usersDTO) {
-            for (UserDTO userDTO : usersDTO) {
-                if (userDTO.getIp().equals(ip)) {
-                    return userDTO;
-                }
-            }
-        }
-        return null;
     }
     
     private User findByName(String name) {
